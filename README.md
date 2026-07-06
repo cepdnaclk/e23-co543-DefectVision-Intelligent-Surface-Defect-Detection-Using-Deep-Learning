@@ -1,7 +1,3 @@
-___
-# DELETE THIS INSTRUCTIONS AND ADD A SHORT INTRODUCTION ABOUT YOUR PROJECT
-___
+# DefectVision: Intelligent Surface Defect Detection Using Deep Learning
 
-## Please refer the instructions in below URL:
-
-https://projects.ce.pdn.ac.lk/docs/how-to-add-a-project
+DefectVision is a computer vision project that leverages deep learning to automate industrial surface defect detection and support intelligent quality inspection in manufacturing environments. The project aims to accurately identify and classify surface defects using transfer learning with state of the art convolutional neural network architectures. A comprehensive experimental framework is employed, including data preprocessing, augmentation, model training, hyperparameter optimization and comparative performance analysis. Models are evaluated using standard classification metrics such as Accuracy, Precision, Recall, F1 Score and Confusion Matrix to ensure robust and reliable performance. To enhance model transparency, Explainable AI techniques including Grad-CAM are incorporated to visualize the image regions influencing predictions. The final system demonstrates an efficient, scalable and interpretable solution for automated industrial inspection while providing valuable insights into the practical application of modern computer vision techniques for quality assurance.
