@@ -122,7 +122,12 @@ def get_patchcore_predictions(category, data_root, backbone, device_str):
                     # pixel clips to black).
                     mean = np.array(IMAGENET_MEAN).reshape(1, 1, 3)
                     std = np.array(IMAGENET_STD).reshape(1, 1, 3)
-                    entry["image"] = img.numpy() * std + mean
+                    # Clip to [0, 1]: un-normalized values can drift a hair
+                    # above 1.0 from floating-point rounding, which would
+                    # trip create_grid's "img.max() <= 1.0" branch check into
+                    # treating this as a [0, 255]-range image and dividing by
+                    # 255 — crushing it to near-black.
+                    entry["image"] = np.clip(img.numpy() * std + mean, 0, 1)
                 if hasattr(pred, 'anomaly_map') and pred.anomaly_map is not None:
                     amap = pred.anomaly_map[i].cpu().numpy()
                     if amap.ndim == 3:
