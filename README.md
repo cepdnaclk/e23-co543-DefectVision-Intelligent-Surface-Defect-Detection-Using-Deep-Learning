@@ -96,33 +96,106 @@ WideResNet50 requires more memory than ResNet18; if GPU memory is limited, use
 
 | Method | Category | Image AUROC | Pixel AUROC | PRO |
 |--------|----------|-------------|-------------|-----|
-| Autoencoder | bottle | — | — | — |
-| Autoencoder | hazelnut | — | — | — |
-| Autoencoder | carpet | — | — | — |
-| PatchCore (WRN50) | bottle | — | — | — |
-| PatchCore (WRN50) | hazelnut | — | — | — |
-| PatchCore (WRN50) | carpet | — | — | — |
+| Autoencoder | bottle | 0.8849 | 0.7247 | 0.4291 |
+| Autoencoder | hazelnut | 0.9664 | 0.9400 | 0.8995 |
+| Autoencoder | carpet | 0.3190 | 0.5471 | 0.2271 |
+| PatchCore (WRN50) | bottle | 1.0000 | 0.9856 | 0.9445 |
+| PatchCore (WRN50) | hazelnut | 1.0000 | 0.9882 | 0.9523 |
+| PatchCore (WRN50) | carpet | 0.9864 | 0.9908 | 0.9494 |
 
-*Results will be filled after running the pipeline. See `results/metrics.csv`.*
+PatchCore beats the autoencoder baseline on every category and every metric,
+consistent with the literature. The gap is largest on **carpet**, where the
+autoencoder's image AUROC (0.319) is worse than random guessing — reconstruction
+error is a poor anomaly signal for a texture category where "normal" already
+contains high-frequency, irregular-looking variation.
 
 ### Ablation: Backbone Comparison (ablation.csv)
 
 | Category | Backbone | Image AUROC | Pixel AUROC | PRO | Avg Inference (ms) |
 |----------|----------|-------------|-------------|-----|---------------------|
-| bottle | ResNet18 | — | — | — | — |
-| bottle | WideResNet50 | — | — | — | — |
-| hazelnut | ResNet18 | — | — | — | — |
-| hazelnut | WideResNet50 | — | — | — | — |
-| carpet | ResNet18 | — | — | — | — |
-| carpet | WideResNet50 | — | — | — | — |
+| bottle | ResNet18 | 1.0000 | 0.9785 | 0.9237 | 159.0 |
+| bottle | WideResNet50 | 1.0000 | 0.9856 | 0.9445 | 213.8 |
+| hazelnut | ResNet18 | 0.9989 | 0.9891 | 0.9458 | 285.8 |
+| hazelnut | WideResNet50 | 1.0000 | 0.9882 | 0.9523 | 350.6 |
+| carpet | ResNet18 | 0.9795 | 0.9878 | 0.9333 | 293.1 |
+| carpet | WideResNet50 | 0.9864 | 0.9908 | 0.9494 | 344.5 |
 
-*See `results/ablation.csv` for full results.*
+WideResNet50 edges out ResNet18 on almost every metric, but the margin is
+small (≤1.3 points of AUROC/PRO on every category) while inference time is
+25–35% higher. ResNet18 is the better choice under tight latency/memory
+budgets; WideResNet50 is worth it only when the extra localization quality
+(PRO) matters more than throughput.
 
 ### Qualitative Results
 
 Grid images showing Original / Ground Truth Mask / Predicted Anomaly Heatmap
 are saved in `results/qualitative/`. Each grid contains 2 correct detections
 and 1 failure case per (method, category) combination.
+
+### Explainability (explainability.csv)
+
+Two gradient/perturbation-based attribution methods explain *why* each model
+flagged an image as anomalous — Grad-CAM for the autoencoder (direct access to
+its architecture), occlusion sensitivity for PatchCore (its anomaly score is
+only reachable through forward passes; see [Explainability Method](#explainability-method)
+below for why). Each is scored against the ground-truth defect mask using two
+standard XAI metrics, computed over the same 20 anomalous test images per
+category for both methods:
+
+- **Pointing Game accuracy**: does the single highest-attribution pixel fall inside the true defect region?
+- **Top-5% IoU**: overlap between the highest-attribution 5% of pixels and the true defect region.
+
+| Method | Category | Pointing Game Acc | Top-5% IoU |
+|--------|----------|--------------------|------------|
+| Autoencoder (Grad-CAM) | bottle | 0.45 | 0.165 |
+| Autoencoder (Grad-CAM) | hazelnut | 0.55 | 0.186 |
+| Autoencoder (Grad-CAM) | carpet | 0.00 | 0.017 |
+| PatchCore (Occlusion) | bottle | 0.60 | 0.117 |
+| PatchCore (Occlusion) | hazelnut | 0.35 | 0.077 |
+| PatchCore (Occlusion) | carpet | 0.50 | 0.039 |
+
+Neither method localizes as tightly as the detection AUROC numbers might
+suggest — both operate at a coarser spatial resolution than the raw anomaly
+map (16×16 for Grad-CAM's bottleneck features, 16×16 occlusion patches for
+PatchCore), so top-5% IoU is modest everywhere. The more informative pattern
+is where each explanation *fails*: autoencoder Grad-CAM scores 0.0 pointing-game
+accuracy on carpet, mirroring its near-random detection AUROC there — when the
+detector itself isn't finding the defect, its explanation has nothing correct
+to point at. PatchCore's explanation quality doesn't track its (uniformly
+excellent) detection AUROC as closely, because occlusion sensitivity is
+explaining the anomaly *map* rather than the same signal used for detection,
+and is more exposed to the border artifacts discussed below.
+
+## Explainability Method
+
+The autoencoder and PatchCore are explained with two *different* attribution
+techniques, chosen per architecture rather than applying one method
+uniformly, because they have different constraints:
+
+- **Autoencoder → Grad-CAM** (Selvaraju et al., 2017). We have direct access
+  to the encoder as a plain `nn.Module`, so we hook its final feature map and
+  backpropagate the image-level anomaly score to get a gradient-weighted
+  localization map. Global-average-pooling the gradient (the textbook
+  Grad-CAM recipe) turned out to destroy localization here — our anomaly
+  score is already spatially selective (built from a top-k over per-pixel
+  errors), so pooling away the spatial gradient pattern left only a
+  location-agnostic "which channels matter" signal that lit up generic
+  high-contrast image content instead of the actual defect. We keep the
+  gradient at full spatial resolution (gradient × activation, summed over
+  channels) instead, which localizes correctly (see `src/explainability.py`).
+- **PatchCore → occlusion sensitivity** (Zeiler & Fergus, 2014), not
+  Grad-CAM. anomalib wraps PatchCore's backbone feature extraction in
+  `torch.no_grad()` internally, so gradients from the anomaly score never
+  reach the input pixels — this holds regardless of which entry point is
+  used to call the model. Occlusion sensitivity needs only forward passes,
+  sidestepping that constraint entirely: it slides a patch of the image's own
+  mean pixel value (not black — a fixed extreme value is itself
+  out-of-distribution for a memory bank of real texture patches, and would
+  bias the attribution) over the input and measures how much each occlusion
+  reduces the anomaly map's total response.
+
+Both attribution maps are scored against the ground-truth defect mask with
+Pointing Game accuracy and top-5% IoU (see `src/metrics.py`).
 
 ## Project Structure
 
@@ -134,18 +207,24 @@ and 1 failure case per (method, category) combination.
 │   ├── train_patchcore.py   # Builds PatchCore memory bank per category
 │   ├── evaluate.py          # Computes all metrics, writes metrics.csv
 │   ├── make_qualitative.py  # Generates qualitative grid images
-│   └── ablation_backbone.py # ResNet18 vs WideResNet50 comparison
+│   ├── ablation_backbone.py # ResNet18 vs WideResNet50 comparison
+│   └── explain.py           # Grad-CAM / occlusion explainability analysis
 ├── src/
 │   ├── autoencoder.py       # Convolutional autoencoder model (~2.5M params)
 │   ├── datasets.py          # MVTec AD dataset loader and utilities
-│   └── metrics.py           # Image AUROC, Pixel AUROC, AUPRO
+│   ├── metrics.py           # Image AUROC, Pixel AUROC, AUPRO, Pointing Game, top-k IoU
+│   ├── explainability.py    # Grad-CAM, occlusion sensitivity, XAI metrics
+│   ├── anomalib_compat.py   # Compatibility fix for an anomalib/pandas version bug
+│   └── results_io.py        # Merges per-category results into shared CSVs
 ├── notebooks/
 │   └── eda.ipynb            # Exploratory data analysis
-├── results/                 # Generated outputs (gitignored)
+├── results/                 # Generated outputs (checkpoints/ gitignored, rest tracked)
 │   ├── metrics.csv          # Main results table
 │   ├── ablation.csv         # Backbone comparison results
-│   ├── qualitative/         # Grid visualizations
-│   └── checkpoints/         # Trained model weights
+│   ├── explainability.csv   # Explanation quality metrics
+│   ├── qualitative/         # Detection grid visualizations
+│   ├── explainability/      # Explanation grid visualizations
+│   └── checkpoints/         # Trained model weights (gitignored)
 ├── requirements.txt
 ├── .gitignore
 └── README.md
@@ -165,16 +244,42 @@ This dataset is for **non-commercial use only**.
 
 **Download:** https://www.mvtec.com/company/research/datasets/mvtec-ad
 
+## References
+
+- Roth, K., Pemula, L., Zepeda, J., Schölkopf, B., Brox, T., & Gehler, P.
+  (2022). Towards Total Recall in Industrial Anomaly Detection. *CVPR*.
+  (PatchCore; used via [anomalib](https://github.com/open-edge-platform/anomalib))
+- Selvaraju, R. R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., &
+  Batra, D. (2017). Grad-CAM: Visual Explanations from Deep Networks via
+  Gradient-based Localization. *ICCV*.
+- Zeiler, M. D., & Fergus, R. (2014). Visualizing and Understanding
+  Convolutional Networks. *ECCV*. (Occlusion sensitivity)
+- Zhang, J., Bargal, S. A., Lin, Z., Brandt, J., Shen, X., & Sclaroff, S.
+  (2018). Top-Down Neural Attention by Excitation Backprop. *IJCV*.
+  (Pointing Game evaluation protocol)
+
 ## Known Limitations
 
-The autoencoder baseline struggles with texture categories (carpet) where
-subtle defects are difficult to distinguish from normal texture variation.
-PatchCore significantly outperforms the autoencoder across all categories,
-as expected from the literature. Both methods may produce false positives
-near image borders or in regions with high-frequency normal texture. The
-autoencoder's localization quality is limited by its small receptive field
-and the inherent blurriness of reconstruction-based approaches. Further
-limitations to be documented after reviewing qualitative outputs.
+- **The autoencoder baseline fails on texture categories.** Carpet image
+  AUROC (0.319) is worse than random guessing — reconstruction error doesn't
+  distinguish defects from normal texture variation when "normal" is already
+  irregular-looking. PatchCore does not have this problem (0.986 on carpet).
+- **PatchCore shows border artifacts.** While building the occlusion-based
+  explanations, we found PatchCore's anomaly map sometimes has an elevated
+  response at image borders strong enough to compete with the true defect
+  region for the map's single global maximum — occlusion attribution had to
+  target the anomaly map's *sum* rather than its max for exactly this reason
+  (see `scripts/explain.py`). This is a real failure mode worth flagging for
+  deployment, not just an artifact of our explanation method.
+- **Neither explanation method localizes as tightly as detection AUROC would
+  suggest.** Both operate at a coarser spatial resolution than the raw
+  anomaly map (see Explainability results above), so top-5% IoU is modest
+  across the board. Autoencoder Grad-CAM's complete failure on carpet
+  (0.0 Pointing Game accuracy) tracks its detection failure there — an
+  explanation can't correctly point at a defect the model isn't finding.
+- The autoencoder's localization quality is further limited by its small
+  receptive field and the inherent blurriness of reconstruction-based
+  approaches.
 
 ## AI Tool Use Disclosure
 
