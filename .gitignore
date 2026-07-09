@@ -1,0 +1,38 @@
+# Dataset (large, must be re-downloaded)
+data/
+
+# Model checkpoints (regenerable via training scripts; too large for git)
+results/checkpoints/
+*.pth
+*.ckpt
+*.pt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Anomalib artifacts
+lightning_logs/

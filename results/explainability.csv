@@ -1,0 +1,7 @@
+method,category,n_samples,pointing_game_acc,topk_iou
+autoencoder,bottle,20,0.4500,0.1647
+patchcore,bottle,20,0.6000,0.1170
+autoencoder,hazelnut,20,0.5500,0.1855
+patchcore,hazelnut,20,0.3500,0.0765
+autoencoder,carpet,20,0.0000,0.0166
+patchcore,carpet,20,0.5000,0.0394

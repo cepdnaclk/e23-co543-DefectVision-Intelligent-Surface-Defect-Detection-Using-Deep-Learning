@@ -1,0 +1,7 @@
+method,category,image_auroc,pixel_auroc,pro
+autoencoder,bottle,0.8849,0.7247,0.4291
+patchcore,bottle,1.0000,0.9856,0.9445
+autoencoder,hazelnut,0.9664,0.9400,0.8995
+patchcore,hazelnut,1.0000,0.9882,0.9523
+autoencoder,carpet,0.3190,0.5471,0.2271
+patchcore,carpet,0.9864,0.9908,0.9494
