@@ -59,6 +59,9 @@ python scripts/make_qualitative.py
 
 # 6. Run backbone ablation study → results/ablation.csv
 python scripts/ablation_backbone.py
+
+# 7. Explainability analysis (Grad-CAM / occlusion sensitivity) → results/explainability.csv
+python scripts/explain.py
 ```
 
 ### Single-Category Quick Test
@@ -79,7 +82,8 @@ python scripts/evaluate.py --categories bottle
 | Evaluate all | 5–10 min | 10–20 min |
 | Qualitative outputs | 2–5 min | 5–10 min |
 | Ablation (both backbones) | 10–20 min | 30–60 min |
-| **Total** | **~45–90 min** | **~2–3 hours** |
+| Explainability analysis | 5–10 min | 30–60 min |
+| **Total** | **~50–100 min** | **~2.5–4 hours** |
 
 **Hardware assumptions:** Single NVIDIA GPU with ≥4 GB VRAM (e.g., GTX 1650 or better).
 All steps work on CPU — pass `--device cpu` to scripts if no GPU is available.
