@@ -334,7 +334,7 @@ This dataset is for **non-commercial use only**.
 ## AI Tool Use Disclosure
 
 This project used AI coding assistance (Claude) for boilerplate and debugging;
-all code was reviewed and understood by the group. See commit history for details.
+all code was reviewed and understood by the group.
 
 ## Links
 
