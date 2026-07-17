@@ -1,9 +1,9 @@
 # This theme is based on https://github.com/jekyll/minima
 # Please refer above link to know the available configurations
 
-title: ""
+title: "Automated Industrial Surface Defect Detection and Localization Using Deep Anomaly Detection"
 remote_theme: cepdnaclk/eYY-project-theme
-description: ""
+description: "Unsupervised anomaly detection for industrial surface inspection using Convolutional Autoencoder and PatchCore on the MVTec AD dataset, with Grad-CAM and occlusion sensitivity explainability."
 markdown: kramdown
 
 kramdown:
