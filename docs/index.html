@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DefectVision - Industrial Surface Defect Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-alt: #162032;
+            --border: #334155;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --accent: #38bdf8;
+            --accent-hover: #7dd3fc;
+            --green: #4ade80;
+            --orange: #fb923c;
+            --red: #f87171;
+            --purple: #a78bfa;
+            --teal: #2dd4bf;
+            --pink: #f472b6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ---- Hero ---- */
+        .hero {
+            position: relative;
+            padding: 80px 24px 60px;
+            text-align: center;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border);
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 900px;
+            height: 900px;
+            background: radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--accent);
+            letter-spacing: 0.05em;
+            margin-bottom: 24px;
+            background: rgba(56,189,248,0.06);
+        }
+        .hero h1 {
+            font-size: clamp(1.6rem, 4vw, 2.6rem);
+            font-weight: 700;
+            line-height: 1.25;
+            max-width: 800px;
+            margin: 0 auto 16px;
+        }
+        .hero-sub {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            max-width: 640px;
+            margin: 0 auto 32px;
+        }
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .meta-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+        .meta-chip strong { color: var(--text); font-weight: 600; }
+
+        /* ---- Layout ---- */
+        .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+        section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+        section:last-of-type { border-bottom: none; }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+        h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin: 28px 0 10px;
+            color: var(--text);
+        }
+        p { color: var(--text-muted); margin-bottom: 14px; max-width: 780px; }
+        p strong, li strong { color: var(--text); }
+
+        /* ---- Team Cards ---- */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .team-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .team-card .name { font-weight: 600; font-size: 1rem; margin-bottom: 4px; }
+        .team-card .enum { font-size: 0.85rem; color: var(--accent); margin-bottom: 6px; }
+        .team-card a { color: var(--text-dim); font-size: 0.82rem; text-decoration: none; }
+        .team-card a:hover { color: var(--accent); }
+
+        .supervisor-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-top: 16px;
+            display: inline-block;
+        }
+        .supervisor-card .label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+        .supervisor-card .name { font-weight: 600; }
+        .supervisor-card a { color: var(--text-muted); font-size: 0.85rem; text-decoration: none; }
+        .supervisor-card a:hover { color: var(--accent); }
+
+        /* ---- Goals list ---- */
+        .goals-list { list-style: none; padding: 0; margin: 16px 0; }
+        .goals-list li {
+            position: relative;
+            padding: 12px 16px 12px 42px;
+            margin-bottom: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        .goals-list li::before {
+            position: absolute;
+            left: 14px;
+            top: 13px;
+            font-size: 1rem;
+        }
+        .goals-list li:nth-child(1)::before { content: '1.'; color: var(--accent); font-weight: 700; }
+        .goals-list li:nth-child(2)::before { content: '2.'; color: var(--green); font-weight: 700; }
+        .goals-list li:nth-child(3)::before { content: '3.'; color: var(--purple); font-weight: 700; }
+
+        /* ---- Pipeline Mermaid ---- */
+        .pipeline-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 32px 24px;
+            margin: 24px 0;
+            overflow-x: auto;
+        }
+        .pipeline-wrap .mermaid { text-align: center; }
+
+        /* ---- Stage cards ---- */
+        .stages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 14px;
+            margin-top: 20px;
+        }
+        .stage-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px;
+        }
+        .stage-num {
+            display: inline-block;
+            width: 28px; height: 28px;
+            line-height: 28px;
+            text-align: center;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        .stage-card h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 6px; }
+        .stage-card p { font-size: 0.85rem; margin-bottom: 0; }
+
+        /* ---- Method cards ---- */
+        .method-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .method-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+        }
+        .method-card .tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 12px;
+        }
+        .tag-baseline { background: rgba(251,146,60,0.15); color: var(--orange); }
+        .tag-improved { background: rgba(74,222,128,0.15); color: var(--green); }
+        .tag-gradcam { background: rgba(167,139,250,0.15); color: var(--purple); }
+        .tag-occlusion { background: rgba(45,212,191,0.15); color: var(--teal); }
+
+        /* ---- Tables ---- */
+        .table-wrap {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        thead { background: var(--bg-card-alt); }
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+        tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: rgba(56,189,248,0.03); }
+
+        .score-perfect { color: var(--green); font-weight: 600; }
+        .score-good { color: var(--accent); }
+        .score-bad { color: var(--red); font-weight: 600; }
+
+        /* ---- Tech tags ---- */
+        .tech-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .tech-tag {
+            padding: 8px 16px;
+            border-radius: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .tech-tag strong { color: var(--text); }
+
+        /* ---- References ---- */
+        .ref-list { list-style: none; padding: 0; counter-reset: ref; }
+        .ref-list li {
+            counter-increment: ref;
+            padding: 8px 0 8px 32px;
+            position: relative;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+        .ref-list li::before {
+            content: '[' counter(ref) ']';
+            position: absolute;
+            left: 0;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* ---- Footer ---- */
+        footer {
+            padding: 40px 24px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+        .footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-bottom: 16px; }
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover { color: var(--accent); }
+        .footer-copy { font-size: 0.78rem; color: var(--text-dim); }
+
+        /* ---- Code ---- */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82em;
+            background: rgba(56,189,248,0.08);
+            padding: 2px 7px;
+            border-radius: 5px;
+            color: var(--accent);
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 640px) {
+            .hero { padding: 48px 16px 40px; }
+            section { padding: 40px 0; }
+            .method-grid { grid-template-columns: 1fr; }
+            .stages-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===================== HERO ===================== -->
+<header class="hero">
+    <div class="container">
+        <div class="hero-badge">CO543 / CO5430 Computer Vision - 2026</div>
+        <h1>Automated Industrial Surface Defect Detection and Localization Using Deep Anomaly Detection</h1>
+        <p class="hero-sub">Unsupervised anomaly detection on the MVTec AD dataset comparing a Convolutional Autoencoder baseline with PatchCore, plus quantitative explainability via Grad-CAM and occlusion sensitivity.</p>
+        <div class="hero-meta">
+            <span class="meta-chip"><strong>Group</strong> G08</span>
+            <span class="meta-chip"><strong>Project</strong> P17</span>
+            <span class="meta-chip"><strong>Category</strong> Industrial Inspection</span>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+
+<!-- ===================== TEAM ===================== -->
+<section>
+    <div class="section-label">Team</div>
+    <h2>Members</h2>
+    <div class="team-grid">
+        <div class="team-card">
+            <div class="name">M.T. Dineth</div>
+            <div class="enum">E/23/076</div>
+            <a href="mailto:e23076@eng.pdn.ac.lk">e23076@eng.pdn.ac.lk</a>
+        </div>
+        <div class="team-card">
+            <div class="name">H.M.U.A. Perera</div>
+            <div class="enum">E/23/266</div>
+            <a href="mailto:e23266@eng.pdn.ac.lk">e23266@eng.pdn.ac.lk</a>
+        </div>
+        <div class="team-card">
+            <div class="name">A.W.K.D.A. Alagiyawanna</div>
+            <div class="enum">E/23/012</div>
+            <a href="mailto:e23012@eng.pdn.ac.lk">e23012@eng.pdn.ac.lk</a>
+        </div>
+    </div>
+    <div class="supervisor-card">
+        <div class="label">Supervisor</div>
+        <div class="name">Dr. Upul Jayasinghe</div>
+        <a href="mailto:upuljm@eng.pdn.ac.lk">upuljm@eng.pdn.ac.lk</a>
+    </div>
+</section>
+
+<!-- ===================== INTRODUCTION ===================== -->
+<section>
+    <div class="section-label">Introduction</div>
+    <h2>Problem and Motivation</h2>
+    <p>Surface defect detection is a critical quality control task in manufacturing. Manual inspection is slow, subjective and error-prone under high-throughput conditions. Automated detection using computer vision can reduce waste, lower costs and improve consistency. However, defective samples are rare in practice, making supervised classification impractical because there are not enough labeled examples of every possible defect type.</p>
+    <p>This project explores <strong>unsupervised anomaly detection</strong>, where models are trained exclusively on defect-free images and learn to flag anything that deviates from normality at test time. We compare a reconstruction-based baseline with a state-of-the-art feature-embedding method and add a quantitative explainability layer so the system reports not only <em>whether</em> an image is anomalous but <em>why</em>.</p>
+
+    <h3>Goals</h3>
+    <ol class="goals-list">
+        <li><strong>Detect</strong> whether a test image contains a defect (image-level binary classification)</li>
+        <li><strong>Localize</strong> the defect at pixel level (produce an anomaly heatmap)</li>
+        <li><strong>Explain</strong> why the model flagged the image, with quantitative evaluation of explanation quality</li>
+    </ol>
+    <p>We evaluate on three categories from the MVTec Anomaly Detection (MVTec AD) dataset: <strong>Bottle</strong> (rigid object), <strong>Hazelnut</strong> (organic object) and <strong>Carpet</strong> (texture), covering structurally different defect scenarios.</p>
+</section>
+
+<!-- ===================== PIPELINE ===================== -->
+<section>
+    <div class="section-label">Architecture</div>
+    <h2>Pipeline Overview</h2>
+
+    <div class="pipeline-wrap">
+        <pre class="mermaid">
+flowchart TD
+    A["<b>1. Download MVTec AD Dataset</b><br/>3 categories: bottle, hazelnut, carpet"]
+    B["<b>2. Exploratory Data Analysis</b><br/>notebooks/eda.ipynb"]
+    C["<b>3. Preprocessing</b><br/>Resize 256x256, Normalize, Mask Binarization"]
+    D["<b>4. Train Autoencoder Baseline</b><br/>MSE loss, Adam, Early Stopping"]
+    E["<b>5. Build PatchCore Memory Bank</b><br/>WideResNet50 backbone, Coreset Subsampling"]
+    F["<b>6. Evaluate Both Methods</b><br/>Image AUROC, Pixel AUROC, AUPRO"]
+    G["<b>7. Qualitative Visualization</b><br/>2 correct detections + 1 failure case"]
+    H["<b>8. Explainability Analysis</b>"]
+    H1["Grad-CAM<br/><i>Autoencoder</i>"]
+    H2["Occlusion Sensitivity<br/><i>PatchCore</i>"]
+    I["<b>9. XAI Evaluation</b><br/>Pointing Game, Top-5% IoU"]
+    J["<b>10. Backbone Ablation</b><br/>ResNet18 vs WideResNet50"]
+    K["<b>Final Results</b><br/>metrics.csv, ablation.csv, explainability.csv"]
+
+    A --> B
+    A --> C
+    C --> D
+    C --> E
+    D --> F
+    E --> F
+    F --> G
+    D --> H
+    E --> H
+    H --> H1
+    H --> H2
+    H1 --> I
+    H2 --> I
+    E --> J
+    F --> K
+    G --> K
+    I --> K
+    J --> K
+
+    style A fill:#4a90d9,color:#fff,stroke:#4a90d9
+    style D fill:#e67e22,color:#fff,stroke:#e67e22
+    style E fill:#27ae60,color:#fff,stroke:#27ae60
+    style F fill:#8e44ad,color:#fff,stroke:#8e44ad
+    style H fill:#c0392b,color:#fff,stroke:#c0392b
+    style K fill:#2c3e50,color:#fff,stroke:#2c3e50
+    style H1 fill:#7c3aed,color:#fff,stroke:#7c3aed
+    style H2 fill:#0d9488,color:#fff,stroke:#0d9488
+        </pre>
+    </div>
+
+    <div class="stages-grid">
+        <div class="stage-card">
+            <div class="stage-num" style="background:#4a90d9;">1</div>
+            <h4>Data Download</h4>
+            <p>Downloads MVTec AD for three categories via direct URL with anomalib fallback.</p>
+        </div>
+        <div class="stage-card">
+            <div class="stage-num" style="background:#e67e22;">2</div>
+            <h4>Baseline Training</h4>
+            <p>Trains a Convolutional Autoencoder per category on defect-free images using MSE loss, Adam optimizer, ReduceLROnPlateau scheduler and early stopping (patience=10).</p>
+        </div>
+        <div class="stage-card">
+            <div class="stage-num" style="background:#27ae60;">3</div>
+            <h4>PatchCore Training</h4>
+            <p>Builds PatchCore memory banks using a pretrained WideResNet50 backbone. Features from layers 2 and 3 are collected and reduced via coreset subsampling (ratio=0.1).</p>
+        </div>
+        <div class="stage-card">
+            <div class="stage-num" style="background:#8e44ad;">4</div>
+            <h4>Evaluation</h4>
+            <p>Computes Image AUROC, Pixel AUROC and AUPRO for both methods on all categories.</p>
+        </div>
+        <div class="stage-card">
+            <div class="stage-num" style="background:#6366f1;">5</div>
+            <h4>Qualitative Visualization</h4>
+            <p>Generates grids showing Original / Ground Truth / Anomaly Heatmap for 2 correct detections and 1 failure case.</p>
+        </div>
+        <div class="stage-card">
+            <div class="stage-num" style="background:#0ea5e9;">6</div>
+            <h4>Backbone Ablation</h4>
+            <p>Compares ResNet18 vs. WideResNet50 as PatchCore backbones, measuring accuracy and inference time trade-offs.</p>
+        </div>
+        <div class="stage-card">
+            <div class="stage-num" style="background:#c0392b;">7</div>
+            <h4>Explainability</h4>
+            <p>Applies Grad-CAM (autoencoder) and occlusion sensitivity (PatchCore) to 20 anomalous samples per category, evaluated with Pointing Game accuracy and Top-5% IoU.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== METHODS ===================== -->
+<section>
+    <div class="section-label">Approach</div>
+    <h2>Methods</h2>
+    <div class="method-grid">
+        <div class="method-card">
+            <span class="tag tag-baseline">Baseline</span>
+            <h3 style="margin-top:0;">Convolutional Autoencoder</h3>
+            <p>A symmetric encoder-decoder network (~2.5M parameters) trained to reconstruct defect-free images. The encoder uses four strided Conv2d blocks (with BatchNorm and ReLU) to compress 256x256x3 input to a 16x16x256 bottleneck. The decoder mirrors this with four ConvTranspose2d blocks and a Sigmoid output.</p>
+            <p>Anomalies produce higher reconstruction error (pixel-wise MSE) because the model has never seen defects during training. The image-level score uses a top-k mean (k=100) of pixel errors for robustness.</p>
+        </div>
+        <div class="method-card">
+            <span class="tag tag-improved">Improved</span>
+            <h3 style="margin-top:0;">PatchCore</h3>
+            <p>PatchCore (Roth et al., 2022) uses a pretrained WideResNet50 backbone to extract patch-level features from intermediate layers. All patch features from normal training images form a memory bank, reduced to 10% via coreset subsampling.</p>
+            <p>At test time, each patch is scored by its nearest-neighbour distance to the bank. No fine-tuning is required on the target domain, leveraging transfer learning from ImageNet's 1.2M-image feature space.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== EXPLAINABILITY ===================== -->
+<section>
+    <div class="section-label">Interpretability</div>
+    <h2>Explainability</h2>
+    <p>Each method is explained with a different attribution technique, chosen based on architectural constraints:</p>
+    <div class="method-grid">
+        <div class="method-card">
+            <span class="tag tag-gradcam">Grad-CAM</span>
+            <h3 style="margin-top:0;">Autoencoder Attribution</h3>
+            <p>We hook the encoder's final feature map and backpropagate the anomaly score. Standard Grad-CAM's global average pooling destroys spatial information here (the anomaly score is already spatially selective), so we keep the gradient at full spatial resolution: element-wise gradient x activation, summed over channels, followed by ReLU and bilinear upsampling.</p>
+        </div>
+        <div class="method-card">
+            <span class="tag tag-occlusion">Occlusion Sensitivity</span>
+            <h3 style="margin-top:0;">PatchCore Attribution</h3>
+            <p>anomalib wraps PatchCore's feature extraction in <code>torch.no_grad()</code>, so gradients are unavailable. Occlusion sensitivity slides a patch filled with the image's channel-wise mean over the input and measures the drop in anomaly response. The mean fill avoids out-of-distribution artifacts that would occur with black or white patches.</p>
+        </div>
+    </div>
+    <p style="margin-top:16px;">Both methods are scored against ground truth masks using <strong>Pointing Game accuracy</strong> (does the peak attribution fall inside the defect?) and <strong>Top-5% IoU</strong> (overlap of the hottest 5% of attribution pixels with the defect).</p>
+</section>
+
+<!-- ===================== RESULTS ===================== -->
+<section>
+    <div class="section-label">Experiments</div>
+    <h2>Results</h2>
+
+    <h3>Detection and Localization</h3>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Method</th><th>Category</th><th>Image AUROC</th><th>Pixel AUROC</th><th>PRO</th></tr></thead>
+            <tbody>
+                <tr><td>Autoencoder</td><td>bottle</td><td>0.8849</td><td>0.7247</td><td>0.4291</td></tr>
+                <tr><td>Autoencoder</td><td>hazelnut</td><td class="score-good">0.9664</td><td class="score-good">0.9400</td><td class="score-good">0.8995</td></tr>
+                <tr><td>Autoencoder</td><td>carpet</td><td class="score-bad">0.3190</td><td>0.5471</td><td class="score-bad">0.2271</td></tr>
+                <tr><td>PatchCore (WRN50)</td><td>bottle</td><td class="score-perfect">1.0000</td><td class="score-perfect">0.9856</td><td class="score-perfect">0.9445</td></tr>
+                <tr><td>PatchCore (WRN50)</td><td>hazelnut</td><td class="score-perfect">1.0000</td><td class="score-perfect">0.9882</td><td class="score-perfect">0.9523</td></tr>
+                <tr><td>PatchCore (WRN50)</td><td>carpet</td><td class="score-perfect">0.9864</td><td class="score-perfect">0.9908</td><td class="score-perfect">0.9494</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p>PatchCore achieves near-perfect scores on all categories. The autoencoder fails on carpet (Image AUROC 0.319, worse than random) because reconstruction error cannot distinguish defects from normal texture variation.</p>
+
+    <h3>Backbone Ablation</h3>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Category</th><th>Backbone</th><th>Image AUROC</th><th>Pixel AUROC</th><th>PRO</th><th>Avg Inference (ms)</th></tr></thead>
+            <tbody>
+                <tr><td>bottle</td><td>ResNet18</td><td class="score-perfect">1.0000</td><td>0.9785</td><td>0.9237</td><td>159.0</td></tr>
+                <tr><td>bottle</td><td>WideResNet50</td><td class="score-perfect">1.0000</td><td class="score-perfect">0.9856</td><td class="score-perfect">0.9445</td><td>213.8</td></tr>
+                <tr><td>hazelnut</td><td>ResNet18</td><td>0.9989</td><td class="score-perfect">0.9891</td><td>0.9458</td><td>285.8</td></tr>
+                <tr><td>hazelnut</td><td>WideResNet50</td><td class="score-perfect">1.0000</td><td>0.9882</td><td class="score-perfect">0.9523</td><td>350.6</td></tr>
+                <tr><td>carpet</td><td>ResNet18</td><td>0.9795</td><td>0.9878</td><td>0.9333</td><td>293.1</td></tr>
+                <tr><td>carpet</td><td>WideResNet50</td><td class="score-good">0.9864</td><td class="score-perfect">0.9908</td><td class="score-perfect">0.9494</td><td>344.5</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p>WideResNet50 provides marginal accuracy gains (&le;1.3 points) at 25-35% higher inference cost. ResNet18 is preferable under latency constraints.</p>
+
+    <h3>Explainability Metrics</h3>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Method</th><th>Category</th><th>Pointing Game Acc</th><th>Top-5% IoU</th></tr></thead>
+            <tbody>
+                <tr><td>Autoencoder (Grad-CAM)</td><td>bottle</td><td>0.45</td><td>0.165</td></tr>
+                <tr><td>Autoencoder (Grad-CAM)</td><td>hazelnut</td><td>0.55</td><td>0.186</td></tr>
+                <tr><td>Autoencoder (Grad-CAM)</td><td>carpet</td><td class="score-bad">0.00</td><td class="score-bad">0.017</td></tr>
+                <tr><td>PatchCore (Occlusion)</td><td>bottle</td><td class="score-good">0.60</td><td>0.117</td></tr>
+                <tr><td>PatchCore (Occlusion)</td><td>hazelnut</td><td>0.35</td><td>0.077</td></tr>
+                <tr><td>PatchCore (Occlusion)</td><td>carpet</td><td>0.50</td><td>0.039</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Both methods operate at 16x16 spatial resolution, limiting tight localization. The autoencoder's 0.0 Pointing Game on carpet mirrors its detection failure: an explanation cannot point at a defect the model is not finding.</p>
+</section>
+
+<!-- ===================== TECHNOLOGIES ===================== -->
+<section>
+    <div class="section-label">Stack</div>
+    <h2>Technologies Used</h2>
+    <div class="tech-grid">
+        <span class="tech-tag"><strong>PyTorch</strong> - Deep Learning</span>
+        <span class="tech-tag"><strong>anomalib</strong> - PatchCore</span>
+        <span class="tech-tag"><strong>scikit-learn</strong> - Metrics</span>
+        <span class="tech-tag"><strong>matplotlib</strong> - Visualization</span>
+        <span class="tech-tag"><strong>OpenCV</strong> - Image Processing</span>
+        <span class="tech-tag"><strong>NumPy / SciPy</strong> - Computation</span>
+        <span class="tech-tag"><strong>MVTec AD</strong> - Dataset</span>
+        <span class="tech-tag"><strong>Python 3.10+</strong> - Language</span>
+    </div>
+</section>
+
+<!-- ===================== REFERENCES ===================== -->
+<section>
+    <div class="section-label">Literature</div>
+    <h2>References</h2>
+    <ol class="ref-list">
+        <li>Bergmann, P., Fauser, M., Sattlegger, D., &amp; Steger, C. (2021). The MVTec Anomaly Detection Dataset: A Comprehensive Real-World Dataset for Unsupervised Anomaly Detection. <em>IJCV</em>, 129, 1038-1059.</li>
+        <li>Roth, K., Pemula, L., Zepeda, J., Scholkopf, B., Brox, T., &amp; Gehler, P. (2022). Towards Total Recall in Industrial Anomaly Detection. <em>CVPR</em>.</li>
+        <li>Selvaraju, R. R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., &amp; Batra, D. (2017). Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization. <em>ICCV</em>.</li>
+        <li>Zeiler, M. D., &amp; Fergus, R. (2014). Visualizing and Understanding Convolutional Networks. <em>ECCV</em>.</li>
+        <li>Zhang, J., Bargal, S. A., Lin, Z., Brandt, J., Shen, X., &amp; Sclaroff, S. (2018). Top-Down Neural Attention by Excitation Backprop. <em>IJCV</em>.</li>
+    </ol>
+</section>
+
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer>
+    <div class="footer-links">
+        <a href="https://github.com/cepdnaclk/e23-co543-DefectVision-Intelligent-Surface-Defect-Detection-Using-Deep-Learning" target="_blank">GitHub Repository</a>
+        <a href="http://www.ce.pdn.ac.lk/" target="_blank">Department of Computer Engineering</a>
+        <a href="https://eng.pdn.ac.lk/" target="_blank">University of Peradeniya</a>
+    </div>
+    <div class="footer-copy">CO543/CO5430 Computer Vision Project - University of Peradeniya - 2026</div>
+</footer>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        themeVariables: {
+            primaryColor: '#1e293b',
+            primaryTextColor: '#e2e8f0',
+            primaryBorderColor: '#334155',
+            lineColor: '#64748b',
+            secondaryColor: '#162032',
+            tertiaryColor: '#0f172a',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '13px'
+        },
+        flowchart: {
+            htmlLabels: true,
+            curve: 'basis',
+            nodeSpacing: 30,
+            rankSpacing: 40
+        }
+    });
+</script>
+
+</body>
+</html>

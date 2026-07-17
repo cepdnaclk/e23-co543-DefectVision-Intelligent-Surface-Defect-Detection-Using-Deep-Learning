@@ -250,7 +250,7 @@ Pointing Game accuracy and top-5% IoU (see `src/metrics.py`).
 
 ```
 ├── data/                    # Dataset (gitignored, populated by download_data.py)
-├── docs/                    # GitHub Pages project page (Jekyll)
+├── docs/                    # GitHub Pages project page (HTML)
 ├── scripts/
 │   ├── download_data.py     # Downloads MVTec AD (3 categories)
 │   ├── train_baseline.py    # Trains convolutional autoencoder per category
