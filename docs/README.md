@@ -183,6 +183,6 @@ Both methods operate at 16x16 spatial resolution, limiting tight localization. T
 ## Links
 
 - [Project Repository](https://github.com/cepdnaclk/e23-co543-DefectVision-Intelligent-Surface-Defect-Detection-Using-Deep-Learning){:target="_blank"}
-- [Project Page](https://cepdnaclk.github.io/e23-co543-Industrial-Surface-Defect-Detection){:target="_blank"}
+- [Project Page](https://cepdnaclk.github.io/e23-co543-DefectVision-Intelligent-Surface-Defect-Detection-Using-Deep-Learning/){:target="_blank"}
 - [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
 - [University of Peradeniya](https://eng.pdn.ac.lk/)
