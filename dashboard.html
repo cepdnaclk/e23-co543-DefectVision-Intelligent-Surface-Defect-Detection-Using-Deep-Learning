@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DefectVision — Results Dashboard</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6;
+    --series-2:       #1baf7a;
+    --good:           #0ca30c;
+    --critical:       #d03b3b;
+    --card-shadow:    0 1px 2px rgba(11,11,11,0.06), 0 1px 1px rgba(11,11,11,0.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --series-2:       #199e70;
+      --good:           #0ca30c;
+      --critical:       #d03b3b;
+      --card-shadow:    0 1px 2px rgba(0,0,0,0.4), 0 1px 1px rgba(0,0,0,0.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:     #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --series-2:       #199e70;
+    --good:           #0ca30c;
+    --critical:       #d03b3b;
+    --card-shadow:    0 1px 2px rgba(0,0,0,0.4), 0 1px 1px rgba(0,0,0,0.3);
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  body { padding-bottom: 64px; }
+
+  a { color: var(--series-1); }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  /* Header */
+  header.top {
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-1);
+    position: sticky; top: 0; z-index: 20;
+  }
+  header.top .bar {
+    max-width: 1180px; margin: 0 auto; padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand .mark {
+    width: 10px; height: 10px; border-radius: 3px;
+    background: linear-gradient(135deg, var(--series-1), var(--series-2));
+    display: inline-block;
+  }
+  .brand h1 { font-size: 16px; margin: 0; font-weight: 600; letter-spacing: 0.01em; }
+  .brand .sub { font-size: 12px; color: var(--text-muted); }
+  nav.pages { display: flex; gap: 4px; }
+  nav.pages a {
+    font-size: 13px; text-decoration: none; color: var(--text-secondary);
+    padding: 6px 10px; border-radius: 6px;
+  }
+  nav.pages a:hover { background: var(--page-plane); color: var(--text-primary); }
+  #theme-toggle {
+    border: 1px solid var(--border); background: transparent; color: var(--text-secondary);
+    border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer;
+  }
+  #theme-toggle:hover { color: var(--text-primary); }
+
+  /* Hero */
+  .hero { padding: 40px 0 8px; }
+  .hero h2 { font-size: 26px; margin: 0 0 8px; font-weight: 650; }
+  .hero p.lede { font-size: 14.5px; color: var(--text-secondary); max-width: 760px; line-height: 1.6; margin: 0 0 28px; }
+
+  /* Stat tiles */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 40px; }
+  .stat-tile {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 18px; box-shadow: var(--card-shadow);
+  }
+  .stat-tile .value { font-size: 28px; font-weight: 650; line-height: 1.1; }
+  .stat-tile .value.good { color: var(--good); }
+  .stat-tile .value.critical { color: var(--critical); }
+  .stat-tile .label { font-size: 12.5px; color: var(--text-secondary); margin-top: 6px; line-height: 1.4; }
+
+  /* Sections */
+  section.block { padding: 36px 0; border-top: 1px solid var(--border); }
+  section.block:first-of-type { border-top: none; }
+  .block-head { margin-bottom: 18px; }
+  .block-head h3 { font-size: 18px; margin: 0 0 4px; font-weight: 650; }
+  .block-head p { font-size: 13.5px; color: var(--text-secondary); margin: 0; max-width: 760px; line-height: 1.55; }
+
+  .chart-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .chart-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+
+  figure.chart-card {
+    margin: 0; background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 16px 10px; box-shadow: var(--card-shadow);
+  }
+  figure.chart-card .chart-title { font-size: 13.5px; font-weight: 600; margin: 0 0 2px; }
+  figure.chart-card .chart-note { font-size: 12px; color: var(--text-muted); margin: 0 0 10px; line-height: 1.4; min-height: 30px; }
+
+  .legend { display: flex; gap: 14px; margin-bottom: 6px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+
+  .chart-svg { width: 100%; height: auto; display: block; }
+  .gridline { stroke: var(--gridline); stroke-width: 1; }
+  .baseline { stroke: var(--baseline); stroke-width: 1; }
+  .axis-label { fill: var(--text-muted); font-size: 10.5px; font-family: system-ui, sans-serif; }
+  .bar { cursor: pointer; transition: filter 0.1s ease; }
+  .bar:hover, .bar:focus { filter: brightness(1.15); outline: none; }
+  .bar:focus-visible { filter: brightness(1.15); }
+
+  details.data-table { margin-top: 10px; }
+  details.data-table summary {
+    font-size: 12px; color: var(--series-1); cursor: pointer; user-select: none; padding: 4px 0;
+  }
+  table.results-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
+  table.results-table th, table.results-table td {
+    text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--gridline);
+    font-variant-numeric: tabular-nums;
+  }
+  table.results-table th:first-child, table.results-table td:first-child,
+  table.results-table th:nth-child(2), table.results-table td:nth-child(2) { text-align: left; }
+  table.results-table th { color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; }
+  table.results-table td { color: var(--text-primary); }
+
+  /* Tooltip */
+  #tooltip {
+    position: fixed; pointer-events: none; z-index: 100;
+    background: var(--text-primary); color: var(--surface-1);
+    font-size: 12px; padding: 6px 9px; border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    opacity: 0; transform: translate(-50%, -100%); transition: opacity 0.08s ease;
+    white-space: nowrap;
+  }
+  #tooltip .tt-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+  #tooltip .tt-series { opacity: 0.75; margin-left: 4px; }
+
+  /* Callouts */
+  .callouts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .callout {
+    background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--series-1);
+    border-radius: 8px; padding: 14px 16px; box-shadow: var(--card-shadow);
+  }
+  .callout.warn { border-left-color: var(--critical); }
+  .callout h4 { font-size: 13px; margin: 0 0 6px; font-weight: 650; }
+  .callout p { font-size: 12.5px; color: var(--text-secondary); margin: 0; line-height: 1.55; }
+
+  /* Gallery */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .tab-btn {
+    border: none; background: transparent; color: var(--text-secondary); font-size: 13px;
+    padding: 9px 14px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab-btn.active { color: var(--text-primary); border-bottom-color: var(--series-1); font-weight: 600; }
+  .tab-btn:hover { color: var(--text-primary); }
+
+  .gallery-panel { display: none; }
+  .gallery-panel.active { display: block; }
+  .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .gallery-item {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; box-shadow: var(--card-shadow); cursor: zoom-in;
+  }
+  .gallery-item img { width: 100%; display: block; aspect-ratio: 1 / 1.04; object-fit: cover; object-position: top; background: var(--page-plane); }
+  .gallery-item .cap { padding: 10px 14px; font-size: 12.5px; color: var(--text-secondary); display: flex; justify-content: space-between; }
+  .gallery-item .cap b { color: var(--text-primary); font-weight: 600; }
+
+  /* Lightbox */
+  #lightbox {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 200;
+    display: none; align-items: center; justify-content: center; padding: 40px; cursor: zoom-out;
+  }
+  #lightbox.open { display: flex; }
+  #lightbox img { max-width: 100%; max-height: 100%; border-radius: 6px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  #lightbox .lb-cap { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: #fff; font-size: 13px; opacity: 0.85; }
+
+  footer.site {
+    margin-top: 40px; padding: 24px 0; border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+
+  @media (max-width: 900px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .chart-grid, .chart-grid.cols-2 { grid-template-columns: 1fr; }
+    .callouts { grid-template-columns: 1fr; }
+    .gallery-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="bar">
+    <div class="brand">
+      <span class="mark"></span>
+      <h1>DefectVision</h1>
+      <span class="sub">Surface defect detection — results dashboard</span>
+    </div>
+    <nav class="pages">
+      <a href="#comparison">Comparison</a>
+      <a href="#ablation">Ablation</a>
+      <a href="#explainability">Explainability</a>
+      <a href="#gallery">Gallery</a>
+      <a href="#limitations">Limitations</a>
+    </nav>
+    <button id="theme-toggle" type="button" aria-label="Toggle dark mode">Toggle theme</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="hero">
+    <h2>Unsupervised anomaly detection on MVTec AD</h2>
+    <p class="lede">
+      A convolutional autoencoder baseline vs. PatchCore (pretrained-feature memory bank),
+      evaluated on three categories — bottle, hazelnut, carpet — with a quantitative
+      explainability layer (Grad-CAM / occlusion sensitivity) scored against ground-truth
+      defect masks. This page summarizes <code>results/metrics.csv</code>,
+      <code>ablation.csv</code> and <code>explainability.csv</code>.
+    </p>
+
+    <div class="stats">
+      <div class="stat-tile">
+        <div class="value good">0.995</div>
+        <div class="label">PatchCore avg. image AUROC across all 3 categories</div>
+      </div>
+      <div class="stat-tile">
+        <div class="value">0.723</div>
+        <div class="label">Autoencoder avg. image AUROC — well behind PatchCore</div>
+      </div>
+      <div class="stat-tile">
+        <div class="value critical">0.319</div>
+        <div class="label">Autoencoder on carpet — worse than random guessing</div>
+      </div>
+      <div class="stat-tile">
+        <div class="value">17–34%</div>
+        <div class="label">Extra inference time for WideResNet50 vs. ResNet18, for ≤1.3&nbsp;pt AUROC/PRO gain</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="comparison">
+    <div class="block-head">
+      <h3>Method comparison</h3>
+      <p>PatchCore (WideResNet50 memory bank) vs. the from-scratch autoencoder, on the three held-out categories. PatchCore leads on every metric and every category — the gap is largest on carpet, a texture class where reconstruction error stops being a useful anomaly signal.</p>
+    </div>
+    <div class="chart-grid" id="chart-comparison"></div>
+  </section>
+
+  <section class="block" id="ablation">
+    <div class="block-head">
+      <h3>Backbone ablation: ResNet18 vs. WideResNet50</h3>
+      <p>PatchCore's memory-bank backbone traded off: WideResNet50 edges out ResNet18 on localization quality (PRO) by ≤1.3&nbsp;points, but costs 17–34% more inference time. ResNet18 is the better call under a latency/memory budget.</p>
+    </div>
+    <div class="chart-grid cols-2" id="chart-ablation"></div>
+  </section>
+
+  <section class="block" id="explainability">
+    <div class="block-head">
+      <h3>Explainability quality</h3>
+      <p>Grad-CAM (autoencoder) and occlusion sensitivity (PatchCore) attributions scored against the ground-truth defect mask over 20 anomalous test images per category. Neither method localizes as tightly as detection AUROC would suggest — both operate at a coarser spatial resolution than the raw anomaly map.</p>
+    </div>
+    <div class="chart-grid cols-2" id="chart-explain"></div>
+  </section>
+
+  <section class="block" id="gallery">
+    <div class="block-head">
+      <h3>Visual results</h3>
+      <p>Detection grids (original / ground-truth mask / predicted anomaly heatmap) and explainability grids (attribution overlays) for every method × category pair. Click any image to enlarge.</p>
+    </div>
+
+    <div class="tabs" id="gallery-tabs">
+      <button class="tab-btn active" data-panel="panel-qualitative">Qualitative detections</button>
+      <button class="tab-btn" data-panel="panel-explain">Explainability maps</button>
+    </div>
+
+    <div class="gallery-panel active" id="panel-qualitative">
+      <div class="gallery-grid" id="grid-qualitative"></div>
+    </div>
+    <div class="gallery-panel" id="panel-explain">
+      <div class="gallery-grid" id="grid-explain"></div>
+    </div>
+  </section>
+
+  <section class="block" id="limitations">
+    <div class="block-head">
+      <h3>Known limitations</h3>
+      <p>Failure modes worth flagging before deployment — see the README for full detail.</p>
+    </div>
+    <div class="callouts">
+      <div class="callout warn">
+        <h4>Autoencoder fails on texture</h4>
+        <p>Carpet image AUROC (0.319) is worse than random guessing — reconstruction error doesn't separate defects from normal texture variation when "normal" is already irregular-looking.</p>
+      </div>
+      <div class="callout warn">
+        <h4>PatchCore border artifacts</h4>
+        <p>PatchCore's anomaly map sometimes peaks at image borders strongly enough to compete with the true defect region — a real deployment risk, not just an artifact of the explanation method.</p>
+      </div>
+      <div class="callout">
+        <h4>Coarse explanations</h4>
+        <p>Both attribution methods run at a coarser spatial resolution (16×16) than the anomaly map itself, so top-5% IoU stays modest even where detection AUROC is excellent.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="site">
+  <div class="wrap" style="display:flex; justify-content:space-between; width:100%; flex-wrap:wrap; gap:8px;">
+    <span>DefectVision — MVTec AD anomaly detection · data from <code>results/*.csv</code></span>
+    <span>Generated dashboard — regenerate by re-running the pipeline and refreshing this page</span>
+  </div>
+</footer>
+
+<div id="tooltip" role="tooltip"></div>
+<div id="lightbox"><img id="lightbox-img" src="" alt=""><div class="lb-cap" id="lightbox-cap"></div></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- theme toggle ---------- */
+  var root = document.documentElement;
+  var savedTheme = null;
+  try { savedTheme = localStorage.getItem('dv-theme'); } catch (e) {}
+  if (savedTheme) root.setAttribute('data-theme', savedTheme);
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var current = root.getAttribute('data-theme');
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var effectiveDark = current ? current === 'dark' : prefersDark;
+    var next = effectiveDark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('dv-theme', next); } catch (e) {}
+  });
+
+  /* ---------- shared tooltip ---------- */
+  var tooltipEl = document.getElementById('tooltip');
+  function showTooltip(x, y, seriesName, catName, valueText) {
+    var valueEl = document.createElement('span');
+    valueEl.className = 'tt-value';
+    valueEl.textContent = valueText;
+    var seriesEl = document.createElement('span');
+    seriesEl.className = 'tt-series';
+    seriesEl.textContent = seriesName + ' · ' + catName;
+    tooltipEl.textContent = '';
+    tooltipEl.appendChild(valueEl);
+    tooltipEl.appendChild(seriesEl);
+    tooltipEl.style.left = x + 'px';
+    tooltipEl.style.top = (y - 10) + 'px';
+    tooltipEl.style.opacity = '1';
+  }
+  function hideTooltip() { tooltipEl.style.opacity = '0'; }
+
+  /* ---------- bar chart renderer ---------- */
+  function roundedTopPath(x, y, w, h, r) {
+    if (h <= 0) return '';
+    r = Math.min(r, h, w / 2);
+    return 'M' + x + ',' + (y + h) +
+      ' L' + x + ',' + (y + r) +
+      ' Q' + x + ',' + y + ' ' + (x + r) + ',' + y +
+      ' L' + (x + w - r) + ',' + y +
+      ' Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + r) +
+      ' L' + (x + w) + ',' + (y + h) + ' Z';
+  }
+
+  function renderBarChart(mount, cfg) {
+    // cfg: { title, note, categories, series:[{name,color,values}], ticks, yMax, fmt }
+    var width = 420, height = 240;
+    var padL = 42, padR = 10, padT = 10, padB = 30;
+    var plotW = width - padL - padR;
+    var plotH = height - padT - padB;
+    var barW = 20, barGap = 2;
+    var seriesN = cfg.series.length;
+    var groupW = plotW / cfg.categories.length;
+    var groupInnerW = seriesN * barW + (seriesN - 1) * barGap;
+
+    function yScale(v) { return padT + plotH - (v / cfg.yMax) * plotH; }
+
+    var svg = '<svg viewBox="0 0 ' + width + ' ' + height + '" class="chart-svg" role="img" aria-label="' + cfg.title + '">';
+
+    cfg.ticks.forEach(function (t) {
+      var y = yScale(t);
+      svg += '<line x1="' + padL + '" y1="' + y + '" x2="' + (width - padR) + '" y2="' + y + '" class="gridline"/>';
+      svg += '<text x="' + (padL - 6) + '" y="' + (y + 3.5) + '" class="axis-label" text-anchor="end">' + cfg.fmt(t) + '</text>';
+    });
+    var y0 = yScale(0);
+    svg += '<line x1="' + padL + '" y1="' + y0 + '" x2="' + (width - padR) + '" y2="' + y0 + '" class="baseline"/>';
+
+    var barMeta = [];
+    cfg.categories.forEach(function (cat, ci) {
+      var groupX = padL + ci * groupW + (groupW - groupInnerW) / 2;
+      cfg.series.forEach(function (s, si) {
+        var v = s.values[ci];
+        var barX = groupX + si * (barW + barGap);
+        var barY = yScale(v);
+        var barH = y0 - barY;
+        var d = roundedTopPath(barX, barY, barW, barH, 4);
+        svg += '<path d="' + d + '" fill="' + s.color + '" class="bar" tabindex="0" ' +
+          'data-series="' + s.name + '" data-cat="' + cat + '" data-value="' + cfg.fmt(v) + '"></path>';
+        barMeta.push({ x: barX, w: barW, cat: cat, series: s.name, value: cfg.fmt(v) });
+      });
+      svg += '<text x="' + (groupX + groupInnerW / 2) + '" y="' + (height - padB + 16) + '" class="axis-label" text-anchor="middle">' + cat + '</text>';
+    });
+    svg += '</svg>';
+
+    var legend = '<div class="legend">' + cfg.series.map(function (s) {
+      return '<span class="legend-item"><span class="legend-swatch" style="background:' + s.color + '"></span>' + s.name + '</span>';
+    }).join('') + '</div>';
+
+    var fig = document.createElement('figure');
+    fig.className = 'chart-card';
+    fig.innerHTML =
+      '<div class="chart-title">' + cfg.title + '</div>' +
+      '<div class="chart-note">' + (cfg.note || '') + '</div>' +
+      legend + svg;
+    mount.appendChild(fig);
+
+    var bars = fig.querySelectorAll('.bar');
+    bars.forEach(function (bar) {
+      var label = bar.getAttribute('data-series') + ' — ' + bar.getAttribute('data-cat') + ': ' + bar.getAttribute('data-value');
+      bar.setAttribute('aria-label', label);
+      function activate(clientX, clientY) {
+        showTooltip(clientX, clientY, bar.getAttribute('data-series'), bar.getAttribute('data-cat'), bar.getAttribute('data-value'));
+      }
+      bar.addEventListener('pointermove', function (e) { activate(e.clientX, e.clientY); });
+      bar.addEventListener('pointerenter', function (e) { activate(e.clientX, e.clientY); });
+      bar.addEventListener('pointerleave', hideTooltip);
+      bar.addEventListener('focus', function () {
+        var r = bar.getBoundingClientRect();
+        activate(r.left + r.width / 2, r.top);
+      });
+      bar.addEventListener('blur', hideTooltip);
+    });
+  }
+
+  function renderSectionTable(mount, cfg) {
+    // cfg: { columns:[...], rows: [[...] ] }
+    var details = document.createElement('details');
+    details.className = 'data-table';
+    var summary = document.createElement('summary');
+    summary.textContent = 'View data table';
+    details.appendChild(summary);
+    var table = document.createElement('table');
+    table.className = 'results-table';
+    var thead = document.createElement('thead');
+    var trh = document.createElement('tr');
+    cfg.columns.forEach(function (c) {
+      var th = document.createElement('th');
+      th.textContent = c;
+      trh.appendChild(th);
+    });
+    thead.appendChild(trh);
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    cfg.rows.forEach(function (row) {
+      var tr = document.createElement('tr');
+      row.forEach(function (cell) {
+        var td = document.createElement('td');
+        td.textContent = cell;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    details.appendChild(table);
+    mount.appendChild(details);
+  }
+
+  var CATEGORIES = ['bottle', 'hazelnut', 'carpet'];
+  var RATIO_TICKS = [0, 0.25, 0.5, 0.75, 1];
+  var fmt2 = function (v) { return v.toFixed(2); };
+  var fmtMs = function (v) { return Math.round(v) + ' ms'; };
+
+  /* ---------- method comparison ---------- */
+  var metrics = {
+    image_auroc: { ae: [0.8849, 0.9664, 0.3190], pc: [1.0000, 1.0000, 0.9864] },
+    pixel_auroc: { ae: [0.7247, 0.9400, 0.5471], pc: [0.9856, 0.9882, 0.9908] },
+    pro:         { ae: [0.4291, 0.8995, 0.2271], pc: [0.9445, 0.9523, 0.9494] }
+  };
+  var compMount = document.getElementById('chart-comparison');
+  renderBarChart(compMount, {
+    title: 'Image AUROC', note: 'Whole-image anomaly classification.',
+    categories: CATEGORIES, ticks: RATIO_TICKS, yMax: 1, fmt: fmt2,
+    series: [
+      { name: 'Autoencoder', color: 'var(--series-1)', values: metrics.image_auroc.ae },
+      { name: 'PatchCore', color: 'var(--series-2)', values: metrics.image_auroc.pc }
+    ]
+  });
+  renderBarChart(compMount, {
+    title: 'Pixel AUROC', note: 'Per-pixel anomaly localization.',
+    categories: CATEGORIES, ticks: RATIO_TICKS, yMax: 1, fmt: fmt2,
+    series: [
+      { name: 'Autoencoder', color: 'var(--series-1)', values: metrics.pixel_auroc.ae },
+      { name: 'PatchCore', color: 'var(--series-2)', values: metrics.pixel_auroc.pc }
+    ]
+  });
+  renderBarChart(compMount, {
+    title: 'PRO', note: 'Per-region overlap — rewards finding whole defect regions.',
+    categories: CATEGORIES, ticks: RATIO_TICKS, yMax: 1, fmt: fmt2,
+    series: [
+      { name: 'Autoencoder', color: 'var(--series-1)', values: metrics.pro.ae },
+      { name: 'PatchCore', color: 'var(--series-2)', values: metrics.pro.pc }
+    ]
+  });
+  renderSectionTable(document.getElementById('comparison').querySelector('.block-head'), {
+    columns: ['Method', 'Category', 'Image AUROC', 'Pixel AUROC', 'PRO'],
+    rows: [
+      ['Autoencoder', 'bottle', '0.8849', '0.7247', '0.4291'],
+      ['Autoencoder', 'hazelnut', '0.9664', '0.9400', '0.8995'],
+      ['Autoencoder', 'carpet', '0.3190', '0.5471', '0.2271'],
+      ['PatchCore', 'bottle', '1.0000', '0.9856', '0.9445'],
+      ['PatchCore', 'hazelnut', '1.0000', '0.9882', '0.9523'],
+      ['PatchCore', 'carpet', '0.9864', '0.9908', '0.9494']
+    ]
+  });
+
+  /* ---------- ablation ---------- */
+  var ablMount = document.getElementById('chart-ablation');
+  renderBarChart(ablMount, {
+    title: 'PRO by backbone', note: 'Localization quality — the metric that separates the two backbones most.',
+    categories: CATEGORIES, ticks: RATIO_TICKS, yMax: 1, fmt: fmt2,
+    series: [
+      { name: 'ResNet18', color: 'var(--series-1)', values: [0.9237, 0.9458, 0.9333] },
+      { name: 'WideResNet50', color: 'var(--series-2)', values: [0.9445, 0.9523, 0.9494] }
+    ]
+  });
+  renderBarChart(ablMount, {
+    title: 'Avg. inference time', note: 'Per-image latency — WideResNet50 costs 17–34% more.',
+    categories: CATEGORIES, ticks: [0, 100, 200, 300, 400], yMax: 400, fmt: function (v) { return v; },
+    series: [
+      { name: 'ResNet18', color: 'var(--series-1)', values: [159.0004, 285.7627, 293.0545] },
+      { name: 'WideResNet50', color: 'var(--series-2)', values: [213.8490, 350.5602, 344.4704] }
+    ]
+  });
+  renderSectionTable(document.getElementById('ablation').querySelector('.block-head'), {
+    columns: ['Category', 'Backbone', 'Image AUROC', 'Pixel AUROC', 'PRO', 'Avg. inference (ms)'],
+    rows: [
+      ['bottle', 'resnet18', '1.0000', '0.9785', '0.9237', '159.0'],
+      ['bottle', 'wide_resnet50_2', '1.0000', '0.9856', '0.9445', '213.8'],
+      ['hazelnut', 'resnet18', '0.9989', '0.9891', '0.9458', '285.8'],
+      ['hazelnut', 'wide_resnet50_2', '1.0000', '0.9882', '0.9523', '350.6'],
+      ['carpet', 'resnet18', '0.9795', '0.9878', '0.9333', '293.1'],
+      ['carpet', 'wide_resnet50_2', '0.9864', '0.9908', '0.9494', '344.5']
+    ]
+  });
+
+  /* ---------- explainability ---------- */
+  var explMount = document.getElementById('chart-explain');
+  renderBarChart(explMount, {
+    title: 'Pointing Game accuracy', note: 'Does the top-attribution pixel fall inside the true defect region?',
+    categories: CATEGORIES, ticks: RATIO_TICKS, yMax: 1, fmt: fmt2,
+    series: [
+      { name: 'Autoencoder (Grad-CAM)', color: 'var(--series-1)', values: [0.45, 0.55, 0.00] },
+      { name: 'PatchCore (Occlusion)', color: 'var(--series-2)', values: [0.60, 0.35, 0.50] }
+    ]
+  });
+  renderBarChart(explMount, {
+    title: 'Top-5% IoU', note: 'Overlap between the top-5% attribution pixels and the true defect region.',
+    categories: CATEGORIES, ticks: [0, 0.05, 0.1, 0.15, 0.2], yMax: 0.2, fmt: fmt2,
+    series: [
+      { name: 'Autoencoder (Grad-CAM)', color: 'var(--series-1)', values: [0.1647, 0.1855, 0.0166] },
+      { name: 'PatchCore (Occlusion)', color: 'var(--series-2)', values: [0.1170, 0.0765, 0.0394] }
+    ]
+  });
+  renderSectionTable(document.getElementById('explainability').querySelector('.block-head'), {
+    columns: ['Method', 'Category', 'Pointing Game Acc', 'Top-5% IoU'],
+    rows: [
+      ['Autoencoder (Grad-CAM)', 'bottle', '0.45', '0.165'],
+      ['Autoencoder (Grad-CAM)', 'hazelnut', '0.55', '0.186'],
+      ['Autoencoder (Grad-CAM)', 'carpet', '0.00', '0.017'],
+      ['PatchCore (Occlusion)', 'bottle', '0.60', '0.117'],
+      ['PatchCore (Occlusion)', 'hazelnut', '0.35', '0.077'],
+      ['PatchCore (Occlusion)', 'carpet', '0.50', '0.039']
+    ]
+  });
+
+  /* ---------- galleries ---------- */
+  var CAT_LABEL = { bottle: 'Bottle', hazelnut: 'Hazelnut', carpet: 'Carpet' };
+  function buildGallery(mountId, basePath) {
+    var mount = document.getElementById(mountId);
+    CATEGORIES.forEach(function (cat) {
+      ['autoencoder', 'patchcore'].forEach(function (method) {
+        var src = basePath + '/' + method + '_' + cat + '.png';
+        var item = document.createElement('div');
+        item.className = 'gallery-item';
+        var img = document.createElement('img');
+        img.src = src;
+        img.alt = method + ' — ' + cat;
+        img.loading = 'lazy';
+        var cap = document.createElement('div');
+        cap.className = 'cap';
+        var b = document.createElement('b');
+        b.textContent = method === 'autoencoder' ? 'Autoencoder' : 'PatchCore';
+        var span = document.createElement('span');
+        span.textContent = CAT_LABEL[cat];
+        cap.appendChild(b);
+        cap.appendChild(span);
+        item.appendChild(img);
+        item.appendChild(cap);
+        item.addEventListener('click', function () { openLightbox(src, b.textContent + ' — ' + CAT_LABEL[cat]); });
+        mount.appendChild(item);
+      });
+    });
+  }
+  buildGallery('grid-qualitative', 'results/qualitative');
+  buildGallery('grid-explain', 'results/explainability');
+
+  var tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      tabBtns.forEach(function (b) { b.classList.remove('active'); });
+      document.querySelectorAll('.gallery-panel').forEach(function (p) { p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById(btn.getAttribute('data-panel')).classList.add('active');
+    });
+  });
+
+  /* ---------- lightbox ---------- */
+  var lightbox = document.getElementById('lightbox');
+  var lightboxImg = document.getElementById('lightbox-img');
+  var lightboxCap = document.getElementById('lightbox-cap');
+  function openLightbox(src, caption) {
+    lightboxImg.src = src;
+    lightboxImg.alt = caption;
+    lightboxCap.textContent = caption;
+    lightbox.classList.add('open');
+  }
+  lightbox.addEventListener('click', function () { lightbox.classList.remove('open'); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') lightbox.classList.remove('open');
+  });
+
+})();
+</script>
+
+</body>
+</html>
