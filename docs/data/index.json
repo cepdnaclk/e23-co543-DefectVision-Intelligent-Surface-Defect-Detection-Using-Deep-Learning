@@ -33,5 +33,7 @@
         "Grad-CAM",
         "Industrial Inspection",
         "Transfer Learning"
-    ]
+    ],
+    "image": "cover_page.jpg",
+    "thumbnail": "thumbnail.jpg"
 }
